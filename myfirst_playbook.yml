@@ -2,7 +2,6 @@
 
 - name: Network Getting Started First Playbook
   connection: ansible.netcommon.network_cli
-  ansible_network_os: ios
   gather_facts: false
   hosts: all
   tasks:
