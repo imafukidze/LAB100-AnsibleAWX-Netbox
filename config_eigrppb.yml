@@ -3,6 +3,7 @@
 - name: "First Play: Automate Routing Configs via Jinja2"
   hosts: core_routers
   connection: network_cli
+  gather_facts: false
   tasks:
     - name: "First Task: Identify Correct Jinja Template"
       set_fact:
