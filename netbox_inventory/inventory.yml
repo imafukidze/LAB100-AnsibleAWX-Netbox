@@ -1,0 +1,11 @@
+---
+plugin: netbox.netbox.nb_inventory
+api_endpoint: https://127.0.0.1
+token: 0123456789abcdef0123456789abcdef01234567
+validate_certs: false
+config_context: false
+ansible_user: admin
+ansible_password: Mypassword0!
+ansible_connection: network_cli
+group_by:
+ - device_roles
