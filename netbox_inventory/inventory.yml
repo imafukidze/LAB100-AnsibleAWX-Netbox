@@ -1,9 +1,10 @@
 ---
 plugin: netbox.netbox.nb_inventory
-api_endpoint: http://172.24.77.195:8000/
+api_endpoint: http://localhost:8000/
 token: 0123456789abcdef0123456789abcdef01234567
 validate_certs: false
 config_context: false
 ansible_connection: network_cli
 group_by:
  - device_roles
+ - manufacturers
