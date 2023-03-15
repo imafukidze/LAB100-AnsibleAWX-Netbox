@@ -1,0 +1,11 @@
+---
+- name: Configure Network with JinJa Templates
+  hosts: all
+  gather_facts: false
+
+
+- name: Import IOS-Router Playbook 
+  import_playbook: child_ios.yml
+
+#- name: Import Nexus Playbook
+ # import_playbook: child_nxos.yml

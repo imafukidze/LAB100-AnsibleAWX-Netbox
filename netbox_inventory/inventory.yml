@@ -3,10 +3,12 @@ plugin: netbox.netbox.nb_inventory
 api_endpoint: http://172.27.161.192:8000
 token: 0123456789abcdef0123456789abcdef01234567
 validate_certs: false
-config_context: false
+config_context: true
+flatten_config_context: true
 ansible_connection: network_cli
 group_by:
  - device_roles
  - manufacturers
  - device_types
  - region
+ - platform
