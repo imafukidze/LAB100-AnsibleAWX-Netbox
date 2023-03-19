@@ -1,0 +1,4 @@
+---
+netbox_url: http://172.27.161.192:8000
+netbox_token: 0123456789abcdef0123456789abcdef01234567
+configs_directory: configs

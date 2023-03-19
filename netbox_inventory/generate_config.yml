@@ -1,5 +1,6 @@
 ---
 - name: Generate Device Configuration
+  connection: local
   hosts: all
   gather_facts: False
 
