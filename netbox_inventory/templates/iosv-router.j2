@@ -34,9 +34,9 @@ aaa new-model
 !
 !
 no ip bootp server
-{% for name_server in device.json.results[0].config_context['name-servers'] %}
-ip name-server {{ name_server }}
-{% endfor %}
+#{% for name_server in device.json.results[0].config_context['name-servers'] %}
+#ip name-server {{ name_server }}
+#{% endfor %}
 !
 spanning-tree extend system-id
 !
