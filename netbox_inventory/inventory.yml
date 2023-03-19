@@ -11,4 +11,3 @@ group_by:
  - manufacturers
  - device_types
  - region
- - platform
