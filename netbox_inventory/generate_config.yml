@@ -1,0 +1,8 @@
+---
+- name: Generate Device Configuration
+  hosts: all
+  gather_facts: False
+
+  roles:
+    - role: generate_config
+      tags: generate_config 
