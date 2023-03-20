@@ -8,7 +8,7 @@
           accept: "application/json"
           Authorization: "Token {{ netbox_token }}"
   register: device
-  
+
 - name: 2 - Get Interfaces
   uri:
       url: "{{ netbox_url }}api/dcim/interfaces/?device={{ inventory_hostname }}&limit=0"
@@ -55,7 +55,7 @@
 #   ansible.builtin.debug:
 #    var: interfaces.json.results
 
-# Uncomment to display the Ansible Host Vars for a host 
+# Uncomment to display the Ansible Host Vars for a host
 # - name: Display all variables/facts known for a host
 #   ansible.builtin.debug:
 #     var: hostvars[inventory_hostname]
@@ -69,8 +69,10 @@
   template:
       src: "templates/{{ platforms[0] }}.j2"
       dest: "{{ configs_directory }}/{{ inventory_hostname }}/{{ inventory_hostname }}.conf"
-
-- name: 8 - Configure Device
-  ios_config:
+	  
+- name: 8 - Configure devices
+  template:
+      ios_config
       src: "templates/{{ platforms[0] }}.j2"
       save_when: modified
+	  
