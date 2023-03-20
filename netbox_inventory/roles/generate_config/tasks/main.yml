@@ -70,7 +70,7 @@
       src: "templates/{{ platforms[0] }}.j2"
       dest: "{{ configs_directory }}/{{ inventory_hostname }}/{{ inventory_hostname }}.conf"
 
-- name: 8 - Configure Device
+- name: 8 - Configure Device for {{ inventory_hostname }}.
   ios_config:
-      src: "templates/{{ platforms[0] }}.j2"
+      config: "templates/iosv-router.j2"
       save_when: modified
