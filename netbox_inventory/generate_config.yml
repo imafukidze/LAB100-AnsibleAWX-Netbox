@@ -1,7 +1,7 @@
 ---
 - name: Generate Device Configuration
   connection: local
-  hosts: mpls_core_router
+  hosts: device_roles_mpls_core_router
   gather_facts: False
 
   roles:
