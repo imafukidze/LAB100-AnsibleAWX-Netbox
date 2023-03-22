@@ -1,11 +1,12 @@
 ---
 - name: Generate Device Configuration
   hosts: device_roles_mpls_core_router
-  gather_facts: False
+  gather_facts: True
   connection: network_cli
   vars:
      ansible_network_os: ios
 
   roles:
     - role: generate_config
-      tags: generate_config 
+      tags: generate_config
+
