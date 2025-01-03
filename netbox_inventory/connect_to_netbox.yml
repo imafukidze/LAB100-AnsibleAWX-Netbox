@@ -20,6 +20,6 @@
           validate_certs: false
         register: netbox_vendors
         run_once: yes
-        tags: device_vendors
+        tags: OEM
       - debug:
-          var: netbox_vendors
+          var: Manufacturer
