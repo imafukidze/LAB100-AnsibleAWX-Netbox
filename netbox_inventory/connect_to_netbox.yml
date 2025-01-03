@@ -5,7 +5,7 @@
     gather_facts: no
     vars:
       netbox_url: http://localhost:8000/  
-      netbox_token: 0123456789abcdef0123456789abcdef01234567
+      netbox_token: 449572a7d7212ea72ad2b7d910173474b2d71332
     tasks:
       - name: NetBox Device // Get Existing Vendors
         uri:
