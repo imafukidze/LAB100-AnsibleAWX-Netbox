@@ -1,0 +1,13 @@
+---
+plugin: netbox.netbox.nb_inventory
+api_endpoint: http://172.30.63.237/:8000
+token: 7ad732a46fc442afe0bff666a4a942a231143b51
+validate_certs: False
+config_context: True
+#flatten_config_context: True
+ansible_connection: network_cli
+group_by:
+ - device_roles
+ - manufacturers
+ - device_types
+ - region
