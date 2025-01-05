@@ -1,0 +1,13 @@
+---
+plugin: netbox.netbox.nb_inventory
+validate_certs: false
+config_context: false
+
+  tasks:
+    - name: Create manufacturer within NetBox with only required information
+      netbox.netbox.netbox_manufacturer:
+        netbox_url: http://172.30.63.237
+        netbox_token: 7ad732a46fc442afe0bff666a4a942a231143b51
+        data:
+          name: Test Manufacturer
+        state: present

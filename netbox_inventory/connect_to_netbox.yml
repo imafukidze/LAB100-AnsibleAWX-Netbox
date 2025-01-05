@@ -4,12 +4,12 @@
     connection: local
     gather_facts: no
     vars:
-      netbox_url: http://localhost:8000/  
-      netbox_token: 449572a7d7212ea72ad2b7d910173474b2d71332
+      netbox_url: http://172.30.63.237:8000
+      netbox_token: 7ad732a46fc442afe0bff666a4a942a231143b51
     tasks:
       - name: NetBox Device // Get Existing Vendors
         uri:
-          url: "{{ netbox_url }}/api/dcim/devices"
+          url: "{{ netbox_url }}/api/dcim/manufacturers"
           method: GET
           headers:
             Authorization: "Token {{ netbox_token }}"
