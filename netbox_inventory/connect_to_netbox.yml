@@ -4,8 +4,8 @@
     connection: local
     gather_facts: no
     vars:
-      netbox_url: http://172.30.63.237:8000
-      netbox_token: 7ad732a46fc442afe0bff666a4a942a231143b51
+      netbox_url: http://192.168.1.178:8000/
+      netbox_token: 205ae3d78a1fb30a6fddbdaf9f6e6a3cead9be7d
     tasks:
       - name: NetBox Device // Get Existing Vendors
         uri:
@@ -20,6 +20,6 @@
           validate_certs: false
         register: netbox_vendors
         run_once: yes
-        tags: OEM
+        tags: oem
       - debug:
           var: Manufacturer
