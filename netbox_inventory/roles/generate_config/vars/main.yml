@@ -1,4 +1,4 @@
 ---
-netbox_url: http://172.27.161.192:8000/
-netbox_token: 0123456789abcdef0123456789abcdef01234567
-configs_directory: /home/imafukidze/ansible_lab1/netbox_inventory/configs
+netbox_url: http://192.168.1.178:8000/
+netbox_token: 205ae3d78a1fb30a6fddbdaf9f6e6a3cead9be7d
+configs_directory: /home/test-user1/netbox_inventory/configs

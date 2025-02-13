@@ -9,4 +9,3 @@
   roles:
     - role: generate_config
       tags: generate_config
-
