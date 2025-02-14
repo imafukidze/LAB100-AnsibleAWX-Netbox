@@ -1,6 +1,6 @@
 ---
  - name: Using Netbox Inventory
-   hosts: device_roles_core_router
+   hosts: platforms_cisco-ios
    connection: network_cli
    vars:
      ansible_network_os: ios
