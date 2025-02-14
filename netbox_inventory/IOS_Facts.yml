@@ -1,6 +1,6 @@
 ---
 - name: Test IOS Facts
-  hosts: core_routers
+  hosts: platforms_cisco-ios
   tasks:
     - debug:
         var: ansible_facts
