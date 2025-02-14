@@ -1,6 +1,6 @@
 ---
 - name: Generate Device Configuration
-  hosts: primary_ip4_10.10.10.10
+  hosts: platforms
   gather_facts: True
   connection: network_cli
   vars:
