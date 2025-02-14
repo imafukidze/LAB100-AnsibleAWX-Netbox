@@ -1,0 +1,33 @@
+---
+- name: Deploy Base Config to Cisco Switch from NetBox
+  hosts: cisco_switches
+  gather_facts: no
+
+  tasks:
+    - name: Fetch config template from NetBox
+      netbox.netbox.netbox_template:
+        netbox_url: "{{ netbox_url }}"
+        netbox_token: "{{ netbox_token }}"
+        data:
+          name: base-config
+      register: base_config_template
+
+    - name: Generate config from template
+      ansible.builtin.template:
+        src: "{{ base_config_template.template }}"
+        dest: "/tmp/{{ inventory_hostname }}_config.cfg"
+
+    - name: Deploy config to Cisco switch
+      cisco.ios.ios_config:
+        src: "/tmp/{{ inventory_hostname }}_config.cfg"
+        save_when: changed
+
+    - name: Verify config deployment
+      cisco.ios.ios_command:
+        commands:
+          - show running-config
+      register: running_config
+
+    - name: Display running config
+      ansible.builtin.debug:
+        var: running_config.stdout_lines
