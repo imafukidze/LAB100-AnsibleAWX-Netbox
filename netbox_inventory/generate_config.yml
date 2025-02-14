@@ -1,6 +1,6 @@
 ---
 - name: Generate Device Configuration
-  hosts: platforms
+  hosts: platforms_cisco-ios
   gather_facts: True
   connection: network_cli
   vars:
