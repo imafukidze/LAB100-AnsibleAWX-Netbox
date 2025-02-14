@@ -1,6 +1,6 @@
 ---
 - name: Generate Device Configuration
-  hosts: device_roles_mpls_core_router
+  hosts: primary_ip4_10.10.10.10
   gather_facts: True
   connection: network_cli
   vars:
