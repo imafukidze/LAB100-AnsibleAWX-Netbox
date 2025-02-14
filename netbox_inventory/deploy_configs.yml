@@ -1,6 +1,6 @@
 ---
 - name: Deploy Base Config to Cisco Switch from NetBox
-  hosts: cisco_switches
+  hosts:  platforms_cisco-ios
   gather_facts: no
 
   tasks:
