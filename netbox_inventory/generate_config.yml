@@ -2,7 +2,6 @@
 - name: Generate Device Configuration
   hosts: platforms_cisco-ios
   gather_facts: False
-  config_context: True
   connection: network_cli
   vars:
      ansible_network_os: ios
