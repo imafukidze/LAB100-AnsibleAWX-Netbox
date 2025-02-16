@@ -1,9 +1,9 @@
 ---
 
-- name: Network Getting Started First Playbook
+- name: 1 Network Getting Started First Playbook
   connection: ansible.netcommon.network_cli
   gather_facts: false
-  hosts: all
+  ansible_host: 192.168.1.100
   tasks:
     - name: Get config for IOS devices
       ios_facts:
@@ -11,3 +11,8 @@
     - name: Display the config
       debug:
         msg: "The hostname is {{ ansible_net_hostname }} and the OS is {{ ansible_net_version }}"
+
+- name: 2 - Create temporary folder for Device Configs
+  file:
+    dest: "{{ configs_directory }}/{{ inventory_hostname }}"
+    state: directory
