@@ -1,4 +1,7 @@
 ---
+netbox_url: "{{ lookup('ansible.builtin.env', 'NETBOX_API') }}"
+netbox_token: "{{ lookup('ansible.builtin.env', 'NETBOX_TOKEN') }}"
+configs_directory: configs
 
 - name: Network Getting Started First Playbook
   connection: ansible.netcommon.network_cli
