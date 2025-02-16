@@ -21,7 +21,7 @@
         return_content: yes
       register: netbox_template
 
-    - name: Extract and render the base-config template
+    - name: Extract and render the base-config.j2 template
       set_fact:
         switch_config: "{{ netbox_template.json.results[0].template }}"
 
