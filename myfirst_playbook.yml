@@ -1,6 +1,6 @@
 ---
 - name: Network Getting Started First Playbook
-  connection: ansible.netcommon.network_cli
+  ansible_network_cli_ssh_type: paramiko
   gather_facts: false
   hosts: platforms_cisco-ios-xe
   tasks:
