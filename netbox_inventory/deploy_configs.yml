@@ -2,6 +2,8 @@
 - name: AWX Deploy Cisco Switch Configuration from NetBox
   hosts: platforms_cisco-ios-xe
   connection: network_cli
+  collections:
+    - cisco.ios
   gather_facts: yes
 
   tasks:
