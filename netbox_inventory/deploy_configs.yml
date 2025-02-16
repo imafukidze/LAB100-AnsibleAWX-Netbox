@@ -13,7 +13,7 @@
   tasks:
     - name: Get the base-config template from NetBox
       uri:
-        url: "{{ netbox_url }}?name=base-config.j2"
+        url: "{{ netbox_url }}?name=base-config"
         headers:
           Authorization: "Token {{ netbox_token }}"
           Content-Type: "application/json"
@@ -21,7 +21,7 @@
         return_content: yes
       register: netbox_template
 
-    - name: Extract and render the base-config.j2 template
+    - name: Extract and render the base-config template
       set_fact:
         switch_config: "{{ netbox_template.json.results[0].template }}"
 
