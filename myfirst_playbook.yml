@@ -2,7 +2,7 @@
 - name: Network Getting Started First Playbook
   connection: ansible.netcommon.network_cli
   gather_facts: false
-  hosts: 192.168.1.100
+  hosts: platforms_cisco-ios-xe
   tasks:
     - name: Get config for IOS devices
       ios_facts:
