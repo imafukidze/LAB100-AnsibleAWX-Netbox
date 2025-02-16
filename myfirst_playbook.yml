@@ -1,12 +1,14 @@
 ---
-- name: Network Getting Started First Playbook
-  ansible_network_cli_ssh_type: paramiko
-  gather_facts: false
-  hosts: platforms_cisco-ios-xe
+- name: Gather facts from Cisco IOS-XE device
+  hosts: all
+  gather_facts: no
+  connection: network_cli
+
   tasks:
-    - name: Get config for IOS devices
-      ios_facts:
+    - name: Gather IOS facts
+      cisco.ios.ios_facts:
         gather_subset: all
-    - name: Display the config
+
+    - name: Display gathered facts
       debug:
-        msg: "The hostname is {{ ansible_net_hostname }} and the OS is {{ ansible_net_version }}"
+        var: ansible_facts
