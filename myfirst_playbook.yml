@@ -1,6 +1,6 @@
 ---
 - name: Gather facts from Cisco IOS-XE device
-  hosts: 192.168.1.100
+  hosts: platforms_cisco-ios-xe
   gather_facts: no
   connection: network_cli
 
