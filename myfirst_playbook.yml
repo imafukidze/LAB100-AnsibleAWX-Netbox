@@ -1,8 +1,4 @@
 ---
-netbox_url: "{{ lookup('ansible.builtin.env', 'NETBOX_API') }}"
-netbox_token: "{{ lookup('ansible.builtin.env', 'NETBOX_TOKEN') }}"
-configs_directory: configs
-
 - name: Network Getting Started First Playbook
   connection: ansible.netcommon.network_cli
   gather_facts: false
@@ -14,8 +10,3 @@ configs_directory: configs
     - name: Display the config
       debug:
         msg: "The hostname is {{ ansible_net_hostname }} and the OS is {{ ansible_net_version }}"
-
-- name: Create temporary folder for Device Configs
-  file:
-    dest: "{{ configs_directory }}/{{ inventory_hostname }}"
-    state: directory
