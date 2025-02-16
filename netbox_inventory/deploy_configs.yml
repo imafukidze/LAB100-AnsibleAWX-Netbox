@@ -1,6 +1,6 @@
 ---
 - name: Deploy Base Config from NetBox to Cisco Switches
-  hosts: platforms_cisco_ios_xe
+  hosts: platform_cisco_ios_xe
   gather_facts: no
   connection: network_cli
   become: yes
