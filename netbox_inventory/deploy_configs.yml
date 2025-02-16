@@ -1,31 +1,41 @@
 ---
-- name: AWX Deploy Cisco Switch Configuration from NetBox
-  hosts: platforms_cisco-ios-xe
+- name: Deploy Base Config from NetBox to Cisco Switches
+  hosts: platforms_cisco_ios_xe
+  gather_facts: no
   connection: network_cli
-  ansible_network_os: cisco.ios.ios
-  gather_facts: yes
+  become: yes
+  become_method: enable
+
+  vars:
+    netbox_url: "http://192.168.1.178/api/extras/config-templates/"
+    netbox_token: "your_netbox_api_token"
 
   tasks:
-    - name: Pull rendered config from NetBox
+    - name: Get the base-config template from NetBox
       uri:
-        url: "http://netbox.local/api/dcim/devices/{{ inventory_hostname }}/render-config/"
-        method: GET
+        url: "{{ netbox_url }}?name=base-config.j2"
         headers:
-          Authorization: "Token {{ netbox_api_token }}"
+          Authorization: "Token {{ netbox_token }}"
+          Content-Type: "application/json"
+        method: GET
         return_content: yes
-      register: netbox_config
+      register: netbox_template
 
-    - name: Save rendered config to a temporary file
-      copy:
-        content: "{{ netbox_config.content }}"
-        dest: "/tmp/{{ inventory_hostname }}_config.txt"
+    - name: Extract and render the base-config template
+      set_fact:
+        switch_config: "{{ netbox_template.json.results[0].template }}"
 
     - name: Deploy configuration to Cisco switch
-      cisco.ios.ios_config:
-        src: "/tmp/{{ inventory_hostname }}_config.txt"
+      ios_config:
+        lines: "{{ switch_config.split('\n') }}"
         save_when: always
 
-    - name: Save running config to startup config
-      cisco.ios.ios_command:
+    - name: Verify deployed configuration
+      ios_command:
         commands:
-          - write memory
+          - show running-config
+      register: running_config
+
+    - name: Display running configuration
+      debug:
+        var: running_config.stdout_lines
