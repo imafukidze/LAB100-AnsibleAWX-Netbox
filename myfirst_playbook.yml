@@ -1,6 +1,6 @@
 ---
 - name: Gather facts from Cisco IOS-XE device
-  hosts: platforms_cisco-ios
+  hosts: platforms_cisco-ios-xe
   gather_facts: no
 
   tasks:
