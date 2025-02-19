@@ -53,7 +53,7 @@
       copy:
         src: "/tmp/{{ inventory_hostname }}.cfg"
         dest: "/tmp/home/awx-generated-configs/{{ inventory_hostname }}.cfg"
-        owner: "{{ test-user1 | default('root') }}"
+        owner: "{{ test-user1 | default('test-user1') }}"
         mode: "0755"
       become: yes
       when: jinja2_template | length > 0
