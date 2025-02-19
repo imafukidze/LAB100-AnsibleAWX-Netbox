@@ -44,7 +44,7 @@
 
     - name: Ensure the output config directory exists
       file:
-        path: "tmp/home/awx-generated-configs"
+        path: "/home/awx-generated-configs"
         state: directory
         mode: "0755"
       become: yes
@@ -53,7 +53,7 @@
       copy:
         src: "/tmp/{{ inventory_hostname }}.cfg"
         dest: "/home/awx-generated-configs/{{ inventory_hostname }}.cfg"
-        owner: "{{ ansible_user | default('root') }}"
-        mode: "0755"
-      become: yes
+        owner: "{{ test-user1 | default('root') }}"
+        # mode: "0755"
+      # become: yes
       when: jinja2_template | length > 0
