@@ -44,7 +44,7 @@
 
     - name: Ensure the output config directory exists
       file:
-        path: "/home/awx-generated-configs"
+        path: "tmp/home/awx-generated-configs"
         state: directory
         mode: "0755"
       become: yes
