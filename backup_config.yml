@@ -1,30 +1,31 @@
 ---
-- name: backup configuration
+- name: Backup configuration
   hosts: all
   gather_facts: no
-  
+
   tasks:
- - name: run show running-config on remote devices
-   ios_command:
-     commands: "show running-config"
-   register: config
+    - name: Run show running-config on remote devices
+      ios_command:
+        commands: "show running-config"
+      register: config
 
- - name: ensure backup folder is created
-   file:
-     path: "{{ backup_root }}"
-     state: directory
-   run_once: yes
+    - name: Ensure backup folder is created
+      file:
+        path: "{{ backup_root }}"
+        state: directory
+      run_once: yes
 
- - name: ensure device folder is created
-   file:
-     path: "{{ backup_root }}/{{ inventory_hostname }}"
-     state: directory
+    - name: Ensure device folder is created
+      file:
+        path: "{{ backup_root }}/{{ inventory_hostname }}"
+        state: directory
 
- - name: get timestamp
-   command: date +%Y%m%d
-   register: timestamp
+    - name: Get timestamp
+      command: date +%Y%m%d
+      register: timestamp
+      delegate_to: localhost
 
- - name: get/copy backup
-   copy:
-     content: "{{ config.stdout[0] }}"
-     dest: "{{ backup_root }}/{{ inventory_hostname }}/running-config_{{ timestamp.stdout }}"
+    - name: Get/copy backup
+      copy:
+        content: "{{ config.stdout[0] }}"
+        dest: "{{ backup_root }}/{{ inventory_hostname }}/running-config_{{ timestamp.stdout }}"
