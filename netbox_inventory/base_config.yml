@@ -4,7 +4,7 @@
   gather_facts: no
   vars:
     # Fetch the API token from AWX Credentials
-    netbox_api_token: "{{ lookup('ansible.builtin.passwordstore', 'NetBox API Token') }}"
+    netbox_api_token: "{{ lookup('awx_secret', 'NetBox API Token') }}"
 
   tasks:
 
