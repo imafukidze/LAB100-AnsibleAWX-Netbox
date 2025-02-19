@@ -1,23 +1,14 @@
 ---
-- name: Fetch NetBox Config Context and Jinja2 Template, then Deploy Config
+- name: Fetch NetBox Config Context and Jinja2 Template, then Generate Config File
   hosts: all
   gather_facts: no
+  vars:
+    netbox_api_token: "{{ lookup('env', 'NETBOX_API_TOKEN') }}"
   tasks:
 
-    - name: Get NetBox Device Info (Including Config Context)
-      uri:
-        url: "http://192.168.1.178/api/dcim/devices/?name={{ inventory_hostname }}"
-        method: GET
-        headers:
-          Authorization: "Token {{ netbox_api_token }}"
-          Content-Type: "application/json"
-        return_content: yes
-        status_code: 200
-      register: netbox_response
-
-    - name: Extract Config Context Data (all_devices_base_config)
+    - name: Set Config Context from NetBox Inventory
       set_fact:
-        config_context: "{{ netbox_response.json.results[0].config_context.all_devices_base_config | default({}) }}"
+        config_context: "{{ hostvars[inventory_hostname]['config_context']['all_devices_base_config'] | default({}) }}"
 
     - name: Get NetBox Jinja2 Config Template (base-config)
       uri:
@@ -46,8 +37,10 @@
         dest: "/tmp/{{ inventory_hostname }}.cfg"
       when: jinja2_template | length > 0
 
-    - name: Deploy Config to Cisco Switch
-      cisco.ios.ios_config:
+    - name: Save the generated configuration file to a permanent location
+      copy:
         src: "/tmp/{{ inventory_hostname }}.cfg"
-        backup: yes
+        dest: "//home/awx-device-configs/{{ inventory_hostname }}.cfg"
+        owner: "{{ ansible_user }}"
+        mode: "0644"
       when: jinja2_template | length > 0
