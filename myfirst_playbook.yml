@@ -1,6 +1,6 @@
 ---
 - name: Gather facts from Cisco IOS-XE device
-  ansible_host: 10.10.10.10
+  hosts: all
   gather_facts: no
 
   tasks:
