@@ -46,14 +46,14 @@
       file:
         path: "/home/awx-generated-configs"
         state: directory
-        mode: "0755"
-      become: yes
+        # mode: "0755"
+      # become: yes
 
     - name: Save the generated configuration file to a permanent location
       copy:
         src: "/tmp/{{ inventory_hostname }}.cfg"
         dest: "/tmp/home/awx-generated-configs/{{ inventory_hostname }}.cfg"
         owner: "{{ test-user1 | default('root') }}"
-        # mode: "0755"
-      # become: yes
+        mode: "0755"
+      become: yes
       when: jinja2_template | length > 0
