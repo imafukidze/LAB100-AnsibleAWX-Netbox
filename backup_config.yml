@@ -13,14 +13,12 @@
       file:
         path: "{{ backup_root }}"
         state: directory
-      become: yes
       run_once: yes
 
     - name: Ensure device folder is created
       file:
         path: "{{ backup_root }}/{{ inventory_hostname }}"
         state: directory
-      become: yes
 
     - name: Get timestamp
       command: date +%Y%m%d
