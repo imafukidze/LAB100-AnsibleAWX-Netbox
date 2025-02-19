@@ -1,0 +1,12 @@
+---
+- name: Check AWX Execution Environment User
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Print current user
+      command: whoami
+      register: current_user
+
+    - name: Show user
+      debug:
+        msg: "AWX is running as user: {{ current_user.stdout }}"
