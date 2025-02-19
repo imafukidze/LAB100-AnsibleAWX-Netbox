@@ -14,6 +14,7 @@
         path: "{{ backup_root }}"
         state: directory
       run_once: yes
+      become: yes
 
     - name: Ensure device folder is created
       file:
