@@ -4,6 +4,7 @@
   gather_facts: no
   vars:
     netbox_api_token: "{{ netbox_api_token }}"  # Token passed as an extra var
+
   tasks:
 
     - name: Debug - Check if netbox_api_token is defined
@@ -46,12 +47,13 @@
         path: "/home/awx-generated-configs"
         state: directory
         mode: "0755"
+      become: yes
 
-   - name: Save the generated configuration file to a permanent location
+    - name: Save the generated configuration file to a permanent location
       copy:
         src: "/tmp/{{ inventory_hostname }}.cfg"
         dest: "/home/awx-generated-configs/{{ inventory_hostname }}.cfg"
         owner: "{{ ansible_user | default('root') }}"
         mode: "0755"
-    become: yes
+      become: yes
       when: jinja2_template | length > 0
