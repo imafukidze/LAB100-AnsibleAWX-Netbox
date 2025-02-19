@@ -2,12 +2,14 @@
 - name: Fetch NetBox Config Context and Jinja2 Template, then Generate Config File
   hosts: all
   gather_facts: no
+  vars:
+    netbox_api_token: "{{ netbox_api_token }}"  # Token passed as an extra var
   tasks:
 
     - name: Debug - Check if netbox_api_token is defined
       debug:
         msg: "NetBox API Token: {{ netbox_api_token }}"
-      
+
     - name: Set Config Context from NetBox Inventory
       set_fact:
         config_context: "{{ hostvars[inventory_hostname]['config_context']['all_devices_base_config'] | default({}) }}"
@@ -42,7 +44,7 @@
     - name: Save the generated configuration file to a permanent location
       copy:
         src: "/tmp/{{ inventory_hostname }}.cfg"
-        dest: "/path/to/save/generated_configs/{{ inventory_hostname }}.cfg"
+        dest: "/home/awx-generated-configs/{{ inventory_hostname }}.cfg"
         owner: "{{ ansible_user }}"
         mode: "0644"
       when: jinja2_template | length > 0
