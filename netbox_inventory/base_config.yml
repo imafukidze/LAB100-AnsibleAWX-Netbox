@@ -41,10 +41,16 @@
         dest: "/tmp/{{ inventory_hostname }}.cfg"
       when: jinja2_template | length > 0
 
+    - name: Ensure the output config directory exists
+      file:
+        path: "/home/awx-generated-configs"
+        state: directory
+        mode: "0755"
+
     - name: Save the generated configuration file to a permanent location
       copy:
         src: "/tmp/{{ inventory_hostname }}.cfg"
         dest: "/home/awx-generated-configs/{{ inventory_hostname }}.cfg"
-        owner: "{{ ansible_user }}"
+        owner: "{{ ansible_user | default('root') }}"
         mode: "0644"
       when: jinja2_template | length > 0
