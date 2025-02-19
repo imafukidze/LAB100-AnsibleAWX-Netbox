@@ -1,21 +1,35 @@
 ---
 - name: Fetch NetBox Config Context and Jinja2 Template, then Generate Config File
-  hosts: all
+  hosts: localhost
   gather_facts: no
   vars:
     netbox_api_token: "{{ netbox_api_token }}"  # Token passed as an extra var
-
+    output_dir: "/home/awx-generated-configs"
   tasks:
 
     - name: Debug - Check if netbox_api_token is defined
       debug:
         msg: "NetBox API Token: {{ netbox_api_token }}"
 
-    - name: Set Config Context from NetBox Inventory
+    - name: Ensure the parent directory has proper permissions
+      file:
+        path: "/home"
+        state: directory
+        mode: "0755"
+      become: yes
+
+    - name: Ensure the output config directory exists
+      file:
+        path: "{{ output_dir }}"
+        state: directory
+        mode: "0755"
+      become: yes
+
+    - name: Get NetBox Config Context for Device
       set_fact:
         config_context: "{{ hostvars[inventory_hostname]['config_context']['all_devices_base_config'] | default({}) }}"
 
-    - name: Get NetBox Jinja2 Config Template (base-config)
+    - name: Fetch NetBox Jinja2 Config Template (base-config)
       uri:
         url: "http://192.168.1.178:8000/api/extras/config-templates/?name=base-config"
         method: GET
@@ -42,18 +56,11 @@
         dest: "/tmp/{{ inventory_hostname }}.cfg"
       when: jinja2_template | length > 0
 
-    - name: Ensure the output config directory exists
-      file:
-        path: "/home/awx-generated-configs"
-        state: directory
-        # mode: "0755"
-      # become: yes
-
     - name: Save the generated configuration file to a permanent location
       copy:
         src: "/tmp/{{ inventory_hostname }}.cfg"
-        dest: "/tmp/home/awx-generated-configs/{{ inventory_hostname }}.cfg"
-        owner: "{{ test-user1 | default('test-user1') }}"
-        mode: "0755"
-      become: yes
+        dest: "{{ output_dir }}/{{ inventory_hostname }}.cfg"
+        owner: "{{ ansible_user | default('awx') }}"
+        mode: "0644"
+      become: yes  # Ensure the task has permissions to save the file
       when: jinja2_template | length > 0
