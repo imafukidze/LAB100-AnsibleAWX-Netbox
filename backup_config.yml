@@ -1,15 +1,8 @@
 ---
 - name: backup configuration
   hosts: all
-  gather_facts: false
+  gather_facts: no
   
-  vars:
- backup_root: ./backups
-
- cli:
-   host: "{{ inventory_hostname }}"
-   authorize: true
-
   tasks:
  - name: run show running-config on remote devices
    ios_command:
