@@ -52,5 +52,5 @@
         src: "/tmp/{{ inventory_hostname }}.cfg"
         dest: "/home/awx-generated-configs/{{ inventory_hostname }}.cfg"
         owner: "{{ ansible_user | default('root') }}"
-        mode: "0644"
+        mode: "0755"
       when: jinja2_template | length > 0
