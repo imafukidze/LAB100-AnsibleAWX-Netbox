@@ -52,7 +52,7 @@
     - name: Save the generated configuration file to a permanent location
       copy:
         src: "/tmp/{{ inventory_hostname }}.cfg"
-        dest: "/home/awx-generated-configs/{{ inventory_hostname }}.cfg"
+        dest: "/tmp/home/awx-generated-configs/{{ inventory_hostname }}.cfg"
         owner: "{{ test-user1 | default('root') }}"
         # mode: "0755"
       # become: yes
