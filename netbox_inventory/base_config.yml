@@ -3,7 +3,9 @@
   hosts: all
   gather_facts: no
   vars:
-    netbox_api_token: "{{ lookup('env', 'NETBOX_API_TOKEN') }}"
+    # Fetch the API token from AWX Credentials
+    netbox_api_token: "{{ lookup('ansible.builtin.passwordstore', 'NetBox API Token') }}"
+
   tasks:
 
     - name: Set Config Context from NetBox Inventory
