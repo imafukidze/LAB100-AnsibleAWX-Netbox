@@ -1,21 +1,24 @@
-- name: Deploy NetBox-rendered config to Cisco switches with modification check
+- name: Deploy NetBox-rendered config to Cisco switches with TACACS server group
   hosts: all
   gather_facts: no
-  tasks:
+  vars:
+    tacacs_server_group: "{{ lookup('netbox', 'tacacs_server_group') }}"  # Get TACACS group from NetBox
+    ntp_servers: "{{ lookup('netbox', 'ntp_servers') }}"  # Get NTP servers from NetBox
 
+  tasks:
     - name: Retrieve device details from NetBox
       uri:
         url: "http://192.168.1.178:8000/api/dcim/devices/?name={{ inventory_hostname }}"
-        method: POST
+        method: GET
         headers:
           Authorization: "Token {{ netbox_api_token }}"
           Accept: "application/json"
         return_content: yes
       register: netbox_response
 
-    - name: Extract primary IP and configuration
+    - name: Extract device primary IP and configuration
       set_fact:
-        device_ip: "{{ netbox_response.json.results[0].primary_ip4.address.split('/')[0] }}"
+        ansible_host: "{{ netbox_response.json.results[0].primary_ip4.address.split('/')[0] }}"  # Primary IP for SSH
         rendered_config: "{{ netbox_response.json.results[0].config_template.rendered }}"
 
     - name: Backup current running configuration
@@ -23,7 +26,7 @@
         commands: "show running-config"
       register: current_config
       vars:
-        ansible_host: "{{ device_ip }}"
+        ansible_host: "{{ ansible_host }}"  # Use dynamically fetched primary IP
 
     - name: Compare current and rendered configurations
       set_fact:
@@ -34,11 +37,11 @@
         lines: "{{ rendered_config.split('\n') }}"
       when: config_changed | bool
       vars:
-        ansible_host: "{{ device_ip }}"
+        ansible_host: "{{ ansible_host }}"  # Use dynamically fetched primary IP
 
     - name: Save configuration if applied
       cisco.ios.ios_command:
         commands: "write memory"
       when: config_changed | bool
       vars:
-        ansible_host: "{{ device_ip }}"
+        ansible_host: "{{ ansible_host }}"  # Use dynamically fetched primary IP
