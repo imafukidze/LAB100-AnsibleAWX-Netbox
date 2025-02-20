@@ -5,6 +5,7 @@
   vars:
     netbox_api_token: "{{ netbox_api_token }}"  # Token passed as an extra var
     netbox_device_url: "http://192.168.1.178:8000/api/dcim/devices/3/render-config/"  # URL for the rendered config
+    ansible_enable_password: cisco  # Define it directly here
 
   tasks:
     - name: Get rendered configuration from NetBox
@@ -31,7 +32,7 @@
         host: "{{ ansible_host }}"  # Use the IP address or hostname from inventory
         username: "{{ ansible_user }}"
         password: "{{ ansible_password }}"
-        # authorize: yes
-        # auth_pass: "{{ ansible_enable_password }}"  # Provide enable password
-        config: "{{ rendered_config }}"
+        authorize: yes
+        auth_pass: "{{ ansible_enable_password }}"  # Provide enable password
+        config: "{{ rendered_config }}"  # This should be the configuration string or lines
         save_when: modified  # Save the configuration only if modified
