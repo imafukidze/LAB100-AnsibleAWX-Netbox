@@ -9,6 +9,13 @@
 
   tasks:
 
+    - name: Ensure the switch is reachable via SSH
+      wait_for:
+        host: "{{ inventory_hostname }}"
+        port: 22
+        timeout: 10
+      delegate_to: localhost
+
     - name: Fetch Rendered Configuration from NetBox
       uri:
         url: "{{ netbox_url }}/api/dcim/devices/?name={{ inventory_hostname }}&include=config_rendered"
@@ -43,6 +50,7 @@
       vars:
         ansible_connection: network_cli
         ansible_network_os: ios
+        ansible_host: "{{ inventory_hostname }}"
         ansible_user: "{{ lookup('env', 'ANSIBLE_NET_USERNAME') }}"
         ansible_password: "{{ lookup('env', 'ANSIBLE_NET_PASSWORD') }}"
         ansible_become: yes
@@ -56,6 +64,7 @@
       vars:
         ansible_connection: network_cli
         ansible_network_os: ios
+        ansible_host: "{{ inventory_hostname }}"
         ansible_user: "{{ lookup('env', 'ANSIBLE_NET_USERNAME') }}"
         ansible_password: "{{ lookup('env', 'ANSIBLE_NET_PASSWORD') }}"
         ansible_become: yes
