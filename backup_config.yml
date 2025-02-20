@@ -6,7 +6,7 @@
     - name: Retrieve device details from NetBox
       uri:
         url: "http://192.168.1.178:8000/api/dcim/devices/?name={{ inventory_hostname }}"
-        method: GET
+        method: POST
         headers:
           Authorization: "Token {{ netbox_api_token }}"
           Accept: "application/json"
