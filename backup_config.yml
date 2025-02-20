@@ -1,31 +1,34 @@
 ---
-- name: Backup configuration
-  hosts: all
+- name: Generate and Deploy AAA & NTP Configuration
+  hosts: cisco_devices
   gather_facts: no
+  vars:
+    backup_root: "./backups"
 
   tasks:
-    - name: Run show running-config on remote devices
+    - name: Fetch NetBox Config Context
+      netbox.netbox.nb_lookup:
+        api_endpoint: "http://192.168.1.178:8000/api/"
+        token: "{{ lookup('awx', 'netbox_api_token') }}"
+        validate_certs: no
+        content_type: "dcim.devices"
+        query_params:
+          name: "{{ inventory_hostname }}"
+      register: netbox_data
+
+    - name: Render Jinja2 template for AAA & NTP
+      template:
+        src: "cisco_aaa_ntp.j2"
+        dest: "/tmp/{{ inventory_hostname }}_aaa_ntp.cfg"
+      vars:
+        aaa: "{{ netbox_data.data.config_context.aaa }}"
+        ntp: "{{ netbox_data.data.config_context.ntp }}"
+
+    - name: Deploy Configuration to Cisco Device
+      ios_config:
+        src: "/tmp/{{ inventory_hostname }}_aaa_ntp.cfg"
+      when: netbox_data.data.config_context.aaa is defined and netbox_data.data.config_context.ntp is defined
+
+    - name: Save Configuration
       ios_command:
-        commands: "show running-config"
-      register: config
-
-    - name: Ensure backup folder is created
-      file:
-        path: "{{ backup_root }}"
-        state: directory
-      run_once: yes
-
-    - name: Ensure device folder is created
-      file:
-        path: "{{ backup_root }}/{{ inventory_hostname }}"
-        state: directory
-
-    - name: Get timestamp
-      command: date +%Y%m%d
-      register: timestamp
-      delegate_to: localhost
-
-    - name: Get/copy backup
-      copy:
-        content: "{{ config.stdout[0] }}"
-        dest: "{{ backup_root }}/{{ inventory_hostname }}/running-config_{{ timestamp.stdout }}"
+        commands: "write memory"
