@@ -56,7 +56,7 @@
     - name: Push config to the switch
       ios_config:
         lines: "{{ lookup('file', '/tmp/{{ inventory_hostname }}.cfg').splitlines() }}"
-        save_when: yes  # Save the configuration after applying
+        save_when: modified  # Save only if configuration has been modified
       connection: ssh
 
     - name: Save config to memory
