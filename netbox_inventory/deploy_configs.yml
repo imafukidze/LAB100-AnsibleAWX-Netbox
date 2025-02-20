@@ -37,13 +37,26 @@
         status_code: 200
       register: netbox_config_response
 
-    - name: Debug - Show the content length of rendered config
+    - name: Debug - Check content type and length of rendered config
       debug:
-        msg: "Rendered config length: {{ netbox_config_response.content | length }}"
+        msg: "Rendered config content length: {{ netbox_config_response.content | length }}"
+
+    - name: Check if rendered config is HTML (error page check)
+      fail:
+        msg: "Rendered config returned HTML or an error page. Please check the NetBox API."
+      when: netbox_config_response.content | regex_search('DOCTYPE html')
+
+    - name: Ensure the config is clean (strip any unwanted characters)
+      set_fact:
+        rendered_config: "{{ netbox_config_response.content | b64decode }}"
+
+    - name: Debug - Show the rendered config
+      debug:
+        msg: "{{ rendered_config }}"
 
     - name: Save rendered config to a local file
       copy:
-        content: "{{ netbox_config_response.content }}"
+        content: "{{ rendered_config }}"
         dest: "/tmp/{{ inventory_hostname }}.cfg"
         mode: "0644"
 
