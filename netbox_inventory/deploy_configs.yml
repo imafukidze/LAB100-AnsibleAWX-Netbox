@@ -18,17 +18,17 @@
         status_code: 200
       register: netbox_device_response
 
-    - name: Extract primary IP from NetBox
+    - name: Extract device ID from NetBox response
       set_fact:
-        device_ip: "{{ netbox_device_response.json.results[0].primary_ip4.address.split('/')[0] | default('') }}"
+        device_id: "{{ netbox_device_response.json.results[0].id }}"
 
-    - name: Debug - Show device IP
+    - name: Debug - Show device ID
       debug:
-        msg: "Device IP for {{ inventory_hostname }}: {{ device_ip }}"
+        msg: "Device ID for {{ inventory_hostname }}: {{ device_id }}"
 
     - name: Get rendered config from NetBox
       uri:
-        url: "{{ netbox_api_url }}extras/rendered-templates/?device={{ inventory_hostname }}"
+        url: "http://192.168.1.178:8000/dcim/devices/{{ device_id }}/render-config/"
         method: GET
         headers:
           Authorization: "Token {{ netbox_api_token }}"
@@ -39,7 +39,7 @@
 
     - name: Extract rendered config
       set_fact:
-        rendered_config: "{{ netbox_config_response.json.results[0].rendered | default('') }}"
+        rendered_config: "{{ netbox_config_response.content | b64decode | to_nice_yaml }}"
 
     - name: Debug - Show rendered config
       debug:
@@ -52,13 +52,13 @@
 
     - name: Ensure SSH connection to the switch
       wait_for:
-        host: "{{ device_ip }}"
+        host: "{{ ansible_host }}"
         port: 22
         timeout: 10
 
     - name: Push config to the switch
       ios_config:
-        host: "{{ device_ip }}"
+        host: "{{ ansible_host }}"
         username: "{{ ansible_user }}"
         password: "{{ ansible_password }}"
         transport: cli
@@ -66,7 +66,7 @@
 
     - name: Save config to memory
       ios_command:
-        host: "{{ device_ip }}"
+        host: "{{ ansible_host }}"
         username: "{{ ansible_user }}"
         password: "{{ ansible_password }}"
         commands:
