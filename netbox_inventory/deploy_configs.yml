@@ -3,12 +3,12 @@
   hosts: all
   gather_facts: no
   vars:
-    netbox_api_token: "{{ netbox_api_token }}"  # Pass as an extra var
+    netbox_api_token: "{{ netbox_api_token }}"  # Token passed as an extra var
   tasks:
 
     - name: Fetch Device Details from NetBox API
       uri:
-        url: "http://192.168.1.178:8000/api/dcim/devices/?name={{ inventory_hostname }}"
+        url: "http://192.168.1.178/api/dcim/devices/?name={{ inventory_hostname }}"
         method: GET
         headers:
           Authorization: "Token {{ netbox_api_token }}"
@@ -17,18 +17,30 @@
         status_code: 200
       register: netbox_device
 
+    - name: Debug - Show NetBox API Response
+      debug:
+        var: netbox_device.json
+
     - name: Extract Device Primary IP
       set_fact:
         device_ip: "{{ netbox_device.json.results[0].primary_ip4.address | regex_replace('/.*$', '') }}"
-      when: netbox_device.json.results | length > 0
+      when: 
+        - netbox_device.json.results | length > 0
+        - netbox_device.json.results[0].primary_ip4 is defined
 
     - name: Debug - Show Extracted IP
       debug:
         msg: "Device IP for SSH: {{ device_ip }}"
+      when: device_ip is defined
+
+    - name: Fail if No IP Found
+      fail:
+        msg: "No primary_ip4 found in NetBox for {{ inventory_hostname }}"
+      when: device_ip is not defined
 
     - name: Fetch Rendered Configuration from NetBox
       uri:
-        url: "http://192.168.1.178:8000/api/extras/render-config/"
+        url: "http://192.168.1.178/api/extras/render-config/"
         method: POST
         headers:
           Authorization: "Token {{ netbox_api_token }}"
@@ -40,11 +52,11 @@
           config_template: "base-config"
         return_content: yes
       register: rendered_config
+      when: device_ip is defined
 
-    - name: Save Rendered Configuration to File
-      copy:
-        content: "{{ rendered_config.json.config | default('') }}"
-        dest: "/tmp/{{ inventory_hostname }}.cfg"
+    - name: Debug - Show Rendered Config
+      debug:
+        var: rendered_config.json.config
       when: rendered_config.json.config is defined
 
     - name: Ensure SSH connectivity to device
@@ -52,6 +64,7 @@
         host: "{{ device_ip }}"
         port: 22
         timeout: 10
+      when: device_ip is defined
 
     - name: Deploy Configuration to Cisco Switch
       ios_config:
