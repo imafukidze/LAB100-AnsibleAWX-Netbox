@@ -1,71 +1,73 @@
 ---
-- name: Pull Rendered Config from NetBox and Push to Cisco Switch
+- name: Fetch and Deploy Config from NetBox to Cisco Switch
   hosts: all
   gather_facts: no
   vars:
-    netbox_api_token: "{{ netbox_api_token }}"  # Passed as an extra var in AWX
-    netbox_url: "http://192.168.1.178:8000"
-    output_dir: "/tmp"
-
+    netbox_api_token: "{{ netbox_api_token }}"  # Pass as an extra var
   tasks:
 
-    - name: Ensure the switch is reachable via SSH
-      wait_for:
-        host: "{{ inventory_hostname }}"
-        port: 22
-        timeout: 10
-      delegate_to: localhost
-
-    - name: Fetch Rendered Configuration from NetBox
+    - name: Fetch Device Details from NetBox API
       uri:
-        url: "{{ netbox_url }}/api/dcim/devices/?name={{ inventory_hostname }}&include=config_rendered"
+        url: "http://192.168.1.178:8000/api/dcim/devices/?name={{ inventory_hostname }}"
         method: GET
         headers:
           Authorization: "Token {{ netbox_api_token }}"
           Content-Type: "application/json"
         return_content: yes
         status_code: 200
-      register: netbox_config_response
+      register: netbox_device
 
-    - name: Extract Rendered Configuration
+    - name: Extract Device Primary IP
       set_fact:
-        rendered_config: "{{ netbox_config_response.json.results[0].config_rendered | default('') }}"
+        device_ip: "{{ netbox_device.json.results[0].primary_ip4.address | regex_replace('/.*$', '') }}"
+      when: netbox_device.json.results | length > 0
 
-    - name: Debug - Show Rendered Config
+    - name: Debug - Show Extracted IP
       debug:
-        msg: "{{ rendered_config }}"
-      when: rendered_config | length > 0
+        msg: "Device IP for SSH: {{ device_ip }}"
 
-    - name: Save Rendered Config to File for Reference
+    - name: Fetch Rendered Configuration from NetBox
+      uri:
+        url: "http://192.168.1.178:8000/api/extras/render-config/"
+        method: POST
+        headers:
+          Authorization: "Token {{ netbox_api_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          object_type: "dcim.device"
+          object_id: "{{ netbox_device.json.results[0].id }}"
+          config_template: "base-config"
+        return_content: yes
+      register: rendered_config
+
+    - name: Save Rendered Configuration to File
       copy:
-        content: "{{ rendered_config }}"
-        dest: "{{ output_dir }}/{{ inventory_hostname }}.cfg"
-        mode: "0644"
-      when: rendered_config | length > 0
+        content: "{{ rendered_config.json.config | default('') }}"
+        dest: "/tmp/{{ inventory_hostname }}.cfg"
+      when: rendered_config.json.config is defined
 
-    - name: Push Config to Cisco Switch
-      cisco.ios.ios_config:
-        lines: "{{ rendered_config.splitlines() }}"
-      when: rendered_config | length > 0
-      vars:
-        ansible_connection: network_cli
-        ansible_network_os: ios
-        ansible_host: "{{ inventory_hostname }}"
-        ansible_user: "{{ lookup('env', 'ANSIBLE_NET_USERNAME') }}"
-        ansible_password: "{{ lookup('env', 'ANSIBLE_NET_PASSWORD') }}"
-        ansible_become: yes
-        ansible_become_method: enable
+    - name: Ensure SSH connectivity to device
+      wait_for:
+        host: "{{ device_ip }}"
+        port: 22
+        timeout: 10
 
-    - name: Save Configuration (Write Memory)
-      cisco.ios.ios_command:
+    - name: Deploy Configuration to Cisco Switch
+      ios_config:
+        host: "{{ device_ip }}"
+        username: "cisco"
+        password: "cisco"
+        authorize: yes
+        commands: "{{ rendered_config.json.config.splitlines() }}"
+      when: rendered_config.json.config is defined
+
+    - name: Save Running Config to Startup
+      ios_command:
+        host: "{{ device_ip }}"
+        username: "cisco"
+        password: "cisco"
+        authorize: yes
         commands:
           - "write memory"
-      when: rendered_config | length > 0
-      vars:
-        ansible_connection: network_cli
-        ansible_network_os: ios
-        ansible_host: "{{ inventory_hostname }}"
-        ansible_user: "{{ lookup('env', 'ANSIBLE_NET_USERNAME') }}"
-        ansible_password: "{{ lookup('env', 'ANSIBLE_NET_PASSWORD') }}"
-        ansible_become: yes
-        ansible_become_method: enable
+      when: rendered_config.json.config is defined
