@@ -55,16 +55,12 @@
 
     - name: Push config to the switch
       ios_config:
-        host: "{{ ansible_host }}"
-        username: "{{ ansible_user }}"
-        password: "{{ ansible_password }}"
-        transport: cli
         lines: "{{ lookup('file', '/tmp/{{ inventory_hostname }}.cfg').splitlines() }}"
+        save_when: yes  # Save the configuration after applying
+      connection: ssh
 
     - name: Save config to memory
       ios_command:
-        host: "{{ ansible_host }}"
-        username: "{{ ansible_user }}"
-        password: "{{ ansible_password }}"
         commands:
           - "write memory"
+      connection: ssh
