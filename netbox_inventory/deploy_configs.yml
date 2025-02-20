@@ -31,7 +31,7 @@
         host: "{{ ansible_host }}"  # Use the IP address or hostname from inventory
         username: "{{ ansible_user }}"
         password: "{{ ansible_password }}"
-        authorize: yes
-        auth_pass: "{{ ansible_enable_password }}"  # Provide enable password
+        # authorize: yes
+        # auth_pass: "{{ ansible_enable_password }}"  # Provide enable password
         config: "{{ rendered_config }}"
         save_when: modified  # Save the configuration only if modified
