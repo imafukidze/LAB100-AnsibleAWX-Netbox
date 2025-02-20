@@ -1,86 +1,73 @@
 ---
-- name: Fetch and Deploy Config from NetBox to Cisco Switch
+- name: Pull Rendered Config from NetBox and Push to Cisco Switch
   hosts: all
   gather_facts: no
   vars:
-    netbox_api_token: "{{ netbox_api_token }}"  # Token passed as an extra var
+    netbox_api_url: "http://192.168.1.178:8000/api/"
+    netbox_api_token: "{{ netbox_api_token }}"  # Passed as an extra var
   tasks:
 
-    - name: Fetch Device Details from NetBox API
+    - name: Get device details from NetBox
       uri:
-        url: "http://192.168.1.178/api/dcim/devices/?name={{ inventory_hostname }}"
+        url: "{{ netbox_api_url }}dcim/devices/?name={{ inventory_hostname }}"
         method: GET
         headers:
           Authorization: "Token {{ netbox_api_token }}"
           Content-Type: "application/json"
         return_content: yes
         status_code: 200
-      register: netbox_device
+      register: netbox_device_response
 
-    - name: Debug - Show NetBox API Response
-      debug:
-        var: netbox_device.json
-
-    - name: Extract Device Primary IP
+    - name: Extract primary IP from NetBox
       set_fact:
-        device_ip: "{{ netbox_device.json.results[0].primary_ip4.address | regex_replace('/.*$', '') }}"
-      when: 
-        - netbox_device.json.results | length > 0
-        - netbox_device.json.results[0].primary_ip4 is defined
+        device_ip: "{{ netbox_device_response.json.results[0].primary_ip4.address.split('/')[0] | default('') }}"
 
-    - name: Debug - Show Extracted IP
+    - name: Debug - Show device IP
       debug:
-        msg: "Device IP for SSH: {{ device_ip }}"
-      when: device_ip is defined
+        msg: "Device IP for {{ inventory_hostname }}: {{ device_ip }}"
 
-    - name: Fail if No IP Found
-      fail:
-        msg: "No primary_ip4 found in NetBox for {{ inventory_hostname }}"
-      when: device_ip is not defined
-
-    - name: Fetch Rendered Configuration from NetBox
+    - name: Get rendered config from NetBox
       uri:
-        url: "http://192.168.1.178/api/extras/render-config/"
-        method: POST
+        url: "{{ netbox_api_url }}extras/rendered-templates/?device={{ inventory_hostname }}"
+        method: GET
         headers:
           Authorization: "Token {{ netbox_api_token }}"
           Content-Type: "application/json"
-        body_format: json
-        body:
-          object_type: "dcim.device"
-          object_id: "{{ netbox_device.json.results[0].id }}"
-          config_template: "base-config"
         return_content: yes
-      register: rendered_config
-      when: device_ip is defined
+        status_code: 200
+      register: netbox_config_response
 
-    - name: Debug - Show Rendered Config
+    - name: Extract rendered config
+      set_fact:
+        rendered_config: "{{ netbox_config_response.json.results[0].rendered | default('') }}"
+
+    - name: Debug - Show rendered config
       debug:
-        var: rendered_config.json.config
-      when: rendered_config.json.config is defined
+        msg: "{{ rendered_config }}"
 
-    - name: Ensure SSH connectivity to device
+    - name: Save rendered config to a local file
+      copy:
+        content: "{{ rendered_config }}"
+        dest: "/tmp/{{ inventory_hostname }}.cfg"
+
+    - name: Ensure SSH connection to the switch
       wait_for:
         host: "{{ device_ip }}"
         port: 22
         timeout: 10
-      when: device_ip is defined
 
-    - name: Deploy Configuration to Cisco Switch
+    - name: Push config to the switch
       ios_config:
         host: "{{ device_ip }}"
-        username: "cisco"
-        password: "cisco"
-        authorize: yes
-        commands: "{{ rendered_config.json.config.splitlines() }}"
-      when: rendered_config.json.config is defined
+        username: "{{ ansible_user }}"
+        password: "{{ ansible_password }}"
+        transport: cli
+        lines: "{{ rendered_config.splitlines() }}"
 
-    - name: Save Running Config to Startup
+    - name: Save config to memory
       ios_command:
         host: "{{ device_ip }}"
-        username: "cisco"
-        password: "cisco"
-        authorize: yes
+        username: "{{ ansible_user }}"
+        password: "{{ ansible_password }}"
         commands:
           - "write memory"
-      when: rendered_config.json.config is defined
