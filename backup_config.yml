@@ -1,34 +1,44 @@
----
-- name: Generate and Deploy AAA & NTP Configuration
-  hosts: cisco_devices
+- name: Deploy NetBox-rendered config to Cisco switches with modification check
+  hosts: all
   gather_facts: no
-  vars:
-    backup_root: "./backups"
-
   tasks:
-    - name: Fetch NetBox Config Context
-      netbox.netbox.nb_lookup:
-        api_endpoint: "http://192.168.1.178:8000/api/"
-        token: "{{ lookup('awx', 'netbox_api_token') }}"
-        validate_certs: no
-        content_type: "dcim.devices"
-        query_params:
-          name: "{{ inventory_hostname }}"
-      register: netbox_data
 
-    - name: Render Jinja2 template for AAA & NTP
-      template:
-        src: "cisco_aaa_ntp.j2"
-        dest: "/tmp/{{ inventory_hostname }}_aaa_ntp.cfg"
+    - name: Retrieve device details from NetBox
+      uri:
+        url: "http://192.168.1.178:8000/api/dcim/devices/?name={{ inventory_hostname }}"
+        method: GET
+        headers:
+          Authorization: "Token {{ netbox_api_token }}"
+          Accept: "application/json"
+        return_content: yes
+      register: netbox_response
+
+    - name: Extract primary IP and configuration
+      set_fact:
+        device_ip: "{{ netbox_response.json.results[0].primary_ip4.address.split('/')[0] }}"
+        rendered_config: "{{ netbox_response.json.results[0].config_template.rendered }}"
+
+    - name: Backup current running configuration
+      cisco.ios.ios_command:
+        commands: "show running-config"
+      register: current_config
       vars:
-        aaa: "{{ netbox_data.data.config_context.aaa }}"
-        ntp: "{{ netbox_data.data.config_context.ntp }}"
+        ansible_host: "{{ device_ip }}"
 
-    - name: Deploy Configuration to Cisco Device
-      ios_config:
-        src: "/tmp/{{ inventory_hostname }}_aaa_ntp.cfg"
-      when: netbox_data.data.config_context.aaa is defined and netbox_data.data.config_context.ntp is defined
+    - name: Compare current and rendered configurations
+      set_fact:
+        config_changed: "{{ current_config.stdout[0] | trim != rendered_config | trim }}"
 
-    - name: Save Configuration
-      ios_command:
+    - name: Apply configuration if changes are detected
+      cisco.ios.ios_config:
+        lines: "{{ rendered_config.split('\n') }}"
+      when: config_changed | bool
+      vars:
+        ansible_host: "{{ device_ip }}"
+
+    - name: Save configuration if applied
+      cisco.ios.ios_command:
         commands: "write memory"
+      when: config_changed | bool
+      vars:
+        ansible_host: "{{ device_ip }}"
