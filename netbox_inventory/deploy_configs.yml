@@ -1,41 +1,49 @@
 ---
-- name: Deploy Base Config from NetBox to Cisco Switches
-  hosts: platforms_cisco-ios-xe
+- name: Pull Rendered Config from NetBox and Push to Cisco Switch
+  hosts: all
   gather_facts: no
-  connection: network_cli
-  become: yes
-  become_method: enable
-
   vars:
-    netbox_url: http://192.168.1.178:8000/extras/config-templates
-    netbox_token: 205ae3d78a1fb30a6fddbdaf9f6e6a3cead9be7d
+    netbox_api_token: "{{ netbox_api_token }}"  # Passed as an extra var in AWX
+    netbox_url: "http://192.168.1.178:8000"
+    output_dir: "/tmp"
 
   tasks:
-    - name: Get the base-config template from NetBox
+
+    - name: Fetch Rendered Configuration from NetBox
       uri:
-        url: "{{ netbox_url }}?name=base-config"
-        headers:
-          Authorization: "Token {{ netbox_token }}"
-          Content-Type: "application/json"
+        url: "{{ netbox_url }}/api/dcim/devices/?name={{ inventory_hostname }}&include=config_rendered"
         method: GET
+        headers:
+          Authorization: "Token {{ netbox_api_token }}"
+          Content-Type: "application/json"
         return_content: yes
-      register: netbox_template
+        status_code: 200
+      register: netbox_config_response
 
-    - name: Extract and render the base-config template
+    - name: Extract Rendered Configuration
       set_fact:
-        switch_config: "{{ netbox_template.json.results[0].template }}"
+        rendered_config: "{{ netbox_config_response.json.results[0].config_rendered | default('') }}"
 
-    - name: Deploy configuration to Cisco switch
-      ios_config:
-        lines: "{{ switch_config.split('\n') }}"
-        save_when: always
-
-    - name: Verify deployed configuration
-      ios_command:
-        commands:
-          - show running-config
-      register: running_config
-
-    - name: Display running configuration
+    - name: Debug - Show Rendered Config
       debug:
-        var: running_config.stdout_lines
+        msg: "{{ rendered_config }}"
+      when: rendered_config | length > 0
+
+    - name: Save Rendered Config to File for Reference
+      copy:
+        content: "{{ rendered_config }}"
+        dest: "{{ output_dir }}/{{ inventory_hostname }}.cfg"
+        mode: "0644"
+      when: rendered_config | length > 0
+
+    - name: Push Config to Cisco Switch
+      cisco.ios.ios_config:
+        lines: "{{ rendered_config.splitlines() }}"
+      when: rendered_config | length > 0
+      vars:
+        ansible_connection: network_cli
+        ansible_network_os: ios
+        ansible_user: "{{ lookup('env', 'ANSIBLE_NET_USERNAME') }}"
+        ansible_password: "{{ lookup('env', 'ANSIBLE_NET_PASSWORD') }}"
+        ansible_become: yes
+        ansible_become_method: enable
