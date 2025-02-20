@@ -37,18 +37,15 @@
         status_code: 200
       register: netbox_config_response
 
-    - name: Extract rendered config
-      set_fact:
-        rendered_config: "{{ netbox_config_response.content | b64decode | to_nice_yaml }}"
-
-    - name: Debug - Show rendered config
+    - name: Debug - Show the content length of rendered config
       debug:
-        msg: "{{ rendered_config }}"
+        msg: "Rendered config length: {{ netbox_config_response.content | length }}"
 
     - name: Save rendered config to a local file
       copy:
-        content: "{{ rendered_config }}"
+        content: "{{ netbox_config_response.content }}"
         dest: "/tmp/{{ inventory_hostname }}.cfg"
+        mode: "0644"
 
     - name: Ensure SSH connection to the switch
       wait_for:
@@ -62,7 +59,7 @@
         username: "{{ ansible_user }}"
         password: "{{ ansible_password }}"
         transport: cli
-        lines: "{{ rendered_config.splitlines() }}"
+        lines: "{{ lookup('file', '/tmp/{{ inventory_hostname }}.cfg').splitlines() }}"
 
     - name: Save config to memory
       ios_command:
