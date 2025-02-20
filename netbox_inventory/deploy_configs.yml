@@ -1,79 +1,37 @@
 ---
-- name: Pull Rendered Config from NetBox and Push to Cisco Switch
+- name: Fetch Rendered Config from NetBox and Apply to Cisco Switch
   hosts: all
   gather_facts: no
   vars:
-    netbox_api_url: "http://192.168.1.178:8000/api/"
-    netbox_api_token: "{{ netbox_api_token }}"  # Passed as an extra var
+    netbox_api_token: "{{ netbox_api_token }}"  # Token passed as an extra var
+    netbox_device_url: "http://192.168.1.178:8000/api/dcim/devices/3/render-config/"  # URL for the rendered config
+
   tasks:
-
-    - name: Get device details from NetBox
+    - name: Get rendered configuration from NetBox
       uri:
-        url: "{{ netbox_api_url }}dcim/devices/?name={{ inventory_hostname }}"
-        method: GET
+        url: "{{ netbox_device_url }}"
+        method: POST
         headers:
           Authorization: "Token {{ netbox_api_token }}"
           Content-Type: "application/json"
         return_content: yes
         status_code: 200
-      register: netbox_device_response
+      register: netbox_rendered_config
 
-    - name: Extract device ID from NetBox response
+    - name: Extract configuration content from NetBox response
       set_fact:
-        device_id: "{{ netbox_device_response.json.results[0].id }}"
+        rendered_config: "{{ netbox_rendered_config.json.content }}"
 
-    - name: Debug - Show device ID
-      debug:
-        msg: "Device ID for {{ inventory_hostname }}: {{ device_id }}"
-
-    - name: Get rendered config from NetBox
-      uri:
-        url: "http://192.168.1.178:8000/dcim/devices/{{ device_id }}/render-config/"
-        method: GET
-        headers:
-          Authorization: "Token {{ netbox_api_token }}"
-          Content-Type: "application/json"
-        return_content: yes
-        status_code: 200
-      register: netbox_config_response
-
-    - name: Debug - Check content type and length of rendered config
-      debug:
-        msg: "Rendered config content length: {{ netbox_config_response.content | length }}"
-
-    - name: Check if rendered config is HTML (error page check)
-      fail:
-        msg: "Rendered config returned HTML or an error page. Please check the NetBox API."
-      when: netbox_config_response.content | regex_search('DOCTYPE html')
-
-    - name: Ensure the config is clean (strip any unwanted characters)
-      set_fact:
-        rendered_config: "{{ netbox_config_response.content | b64decode }}"
-
-    - name: Debug - Show the rendered config
+    - name: Debug - Display rendered configuration
       debug:
         msg: "{{ rendered_config }}"
 
-    - name: Save rendered config to a local file
-      copy:
-        content: "{{ rendered_config }}"
-        dest: "/tmp/{{ inventory_hostname }}.cfg"
-        mode: "0644"
-
-    - name: Ensure SSH connection to the switch
-      wait_for:
-        host: "{{ ansible_host }}"
-        port: 22
-        timeout: 10
-
-    - name: Push config to the switch
-      ios_config:
-        lines: "{{ lookup('file', '/tmp/{{ inventory_hostname }}.cfg').splitlines() }}"
-        save_when: modified  # Save only if configuration has been modified
-      connection: ssh
-
-    - name: Save config to memory
-      ios_command:
-        commands:
-          - "write memory"
-      connection: ssh
+    - name: Push configuration to Cisco switch
+      cisco.ios.ios_config:
+        host: "{{ ansible_host }}"  # Use the IP address or hostname from inventory
+        username: "{{ ansible_user }}"
+        password: "{{ ansible_password }}"
+        authorize: yes
+        auth_pass: "{{ ansible_enable_password }}"  # Provide enable password
+        config: "{{ rendered_config }}"
+        save_when: modified  # Save the configuration only if modified
