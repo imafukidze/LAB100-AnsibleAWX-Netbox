@@ -1,47 +1,23 @@
-- name: Deploy NetBox-rendered config to Cisco switches with TACACS server group
+- name: Configure AAA and TACACS on Cisco devices
   hosts: all
   gather_facts: no
-  vars:
-    tacacs_server_group: "{{ lookup('netbox', 'tacacs_server_group') }}"  # Get TACACS group from NetBox
-    ntp_servers: "{{ lookup('netbox', 'ntp_servers') }}"  # Get NTP servers from NetBox
 
   tasks:
-    - name: Retrieve device details from NetBox
+    - name: Get rendered configuration from NetBox
       uri:
-        url: "http://192.168.1.178:8000/api/dcim/devices/?name={{ inventory_hostname }}"
+        url: "http://192.168.1.178:8000/api/dcim/devices/{{ inventory_hostname }}/config-context/"
         method: GET
         headers:
           Authorization: "Token {{ netbox_api_token }}"
-          Accept: "application/json"
-        return_content: yes
-      register: netbox_response
+          Content-Type: "application/json"
+      register: netbox_config
 
-    - name: Extract device primary IP and configuration
+    - name: Extract configuration from NetBox response
       set_fact:
-        ansible_host: "{{ netbox_response.json.results[0].primary_ip4.address.split('/')[0] }}"  # Primary IP for SSH
-        rendered_config: "{{ netbox_response.json.results[0].config_template.rendered }}"
+        rendered_config: "{{ netbox_config.json.rendered_config }}"
 
-    - name: Backup current running configuration
-      cisco.ios.ios_command:
-        commands: "show running-config"
-      register: current_config
+    - name: Deploy configuration to Cisco device
+      ios_config:
+        lines: "{{ rendered_config.splitlines() }}"
       vars:
-        ansible_host: "{{ ansible_host }}"  # Use dynamically fetched primary IP
-
-    - name: Compare current and rendered configurations
-      set_fact:
-        config_changed: "{{ current_config.stdout[0] | trim != rendered_config | trim }}"
-
-    - name: Apply configuration if changes are detected
-      cisco.ios.ios_config:
-        lines: "{{ rendered_config.split('\n') }}"
-      when: config_changed | bool
-      vars:
-        ansible_host: "{{ ansible_host }}"  # Use dynamically fetched primary IP
-
-    - name: Save configuration if applied
-      cisco.ios.ios_command:
-        commands: "write memory"
-      when: config_changed | bool
-      vars:
-        ansible_host: "{{ ansible_host }}"  # Use dynamically fetched primary IP
+        ansible_host: "{{ ansible_host | default(hostvars[inventory_hostname]['primary_ip4']) }}"
