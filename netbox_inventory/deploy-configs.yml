@@ -6,7 +6,7 @@
     - name: Fetch rendered configuration from NetBox
       uri:
         url: "http://{{ netbox_host }}/api/dcim/devices/{{ inventory_hostname }}/render-config/"
-        method: GET
+        method: POST
         headers:
           Authorization: "Token {{ netbox_api_token }}"
         return_content: yes
