@@ -6,7 +6,7 @@
     - name: Fetch rendered configuration from NetBox
       uri:
         url: "http://{{ netbox_host }}/api/dcim/devices/{{ inventory_hostname }}/render-config/"
-        method: GET
+        method: POST
         headers:
           Authorization: "Token {{ netbox_api_token }}"
         return_content: yes
@@ -24,10 +24,10 @@
     - name: Push configuration to Cisco switch
       cisco.ios.ios_config:
         lines: "{{ rendered_config.splitlines() }}"
-        save_when: modified  # Save the configuration only if modified
+        save_when: modified
       vars:
         ansible_user: "{{ ansible_user }}"
         ansible_password: "{{ ansible_password }}"
         ansible_become: yes
         ansible_become_password: "{{ ansible_enable_password }}"
-      when: rendered_config is defined  # Proceed only if rendered config is fetched
+      when: rendered_config is defined
