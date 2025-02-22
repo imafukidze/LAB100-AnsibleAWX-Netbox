@@ -8,7 +8,7 @@
     ansible_enable_password: cisco
     ansible_user: cisco
     ansible_password: cisco
-    ansible_host: 10.10.10.10
+    ansible_host: 10.10.10.11
 
   tasks:
     - name: Get rendered configuration from NetBox
