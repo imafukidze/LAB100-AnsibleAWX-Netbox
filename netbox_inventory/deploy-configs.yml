@@ -4,7 +4,6 @@
   gather_facts: no
   vars:
     netbox_api_token: "{{ netbox_api_token }}"  # Token passed as an extra var
-    netbox_host: "http://192.168.1.178:8000"
     device_name: "{{ inventory_hostname }}"  # Use inventory hostname or pass as a variable
     netbox_device_url: "{{ netbox_host }}/api/dcim/devices/{{ device_id }}/render-config/"
     
