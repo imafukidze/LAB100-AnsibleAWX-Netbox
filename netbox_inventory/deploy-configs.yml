@@ -2,20 +2,41 @@
 - name: Fetch Rendered Config from NetBox and Apply to Cisco Switch
   hosts: all
   gather_facts: no
+  vars:
+    netbox_api_token: "{{ netbox_api_token }}"  # Token passed as an extra var
+    netbox_host: "http://192.168.1.178:8000"
+    device_name: "{{ inventory_hostname }}"  # Use inventory hostname or pass as a variable
+    netbox_device_url: "{{ netbox_host }}/api/dcim/devices/{{ device_id }}/render-config/"
+    
   tasks:
-    - name: Fetch rendered configuration from NetBox
+    - name: Fetch NetBox device ID based on device name
       uri:
-        url: "http://{{ netbox_host }}/api/dcim/devices/{{ inventory_hostname }}/render-config/"
-        method: POST
+        url: "{{ netbox_host }}/api/dcim/devices/"
+        method: GET
         headers:
           Authorization: "Token {{ netbox_api_token }}"
         return_content: yes
+        status_code: 200
+      register: netbox_devices
+
+    - name: Set the device ID based on the device name
+      set_fact:
+        device_id: "{{ netbox_devices.json.results | selectattr('name', 'equalto', device_name) | map(attribute='id') | first }}"
+
+    - name: Fetch rendered configuration from NetBox
+      uri:
+        url: "{{ netbox_device_url }}"
+        method: POST
+        headers:
+          Authorization: "Token {{ netbox_api_token }}"
+          Content-Type: "application/json"
+        return_content: yes
+        status_code: 200
       register: netbox_rendered_config
 
     - name: Extract configuration content from NetBox response
       set_fact:
         rendered_config: "{{ netbox_rendered_config.json.content }}"
-      when: netbox_rendered_config is defined
 
     - name: Debug - Display rendered configuration
       debug:
@@ -23,11 +44,11 @@
 
     - name: Push configuration to Cisco switch
       cisco.ios.ios_config:
-        lines: "{{ rendered_config.splitlines() }}"
-        save_when: modified
+        lines: "{{ rendered_config.splitlines() }}"  # Push the config as a list of lines
+        save_when: modified  # Save the configuration only if modified
       vars:
+        ansible_host: "{{ ansible_host }}"
         ansible_user: "{{ ansible_user }}"
         ansible_password: "{{ ansible_password }}"
         ansible_become: yes
         ansible_become_password: "{{ ansible_enable_password }}"
-      when: rendered_config is defined
