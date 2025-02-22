@@ -2,36 +2,37 @@
 - name: Fetch Rendered Config from NetBox and Apply to Cisco Switch
   hosts: all
   gather_facts: no
-
   tasks:
-    - name: Fetch NetBox device details dynamically
+    - name: Fetch all devices from NetBox
       uri:
-        url: "http://{{ netbox_host }}/api/dcim/devices/{{ netbox_device_id }}/"
+        url: "http://{{ netbox_host }}/api/dcim/devices/"
         method: GET
         headers:
           Authorization: "Token {{ netbox_api_token }}"
         return_content: yes
-        status_code: 200
-      register: netbox_device_details
+      register: netbox_devices
 
-    - name: Extract NetBox device URL from response
+    - name: Find device ID by device name
       set_fact:
-        netbox_device_url: "{{ netbox_device_details.json.render_config_url }}"
+        netbox_device_id: "{{ item.id }}"
+      when: item.name == ansible_hostname  # Match the device by name
+      loop: "{{ netbox_devices.json.results }}"
+      tags: find_device
 
-    - name: Get rendered configuration from NetBox
+    - name: Fetch rendered configuration from NetBox
       uri:
-        url: "{{ netbox_device_url }}"
-        method: POST
+        url: "http://{{ netbox_host }}/api/dcim/devices/{{ netbox_device_id }}/render-config/"
+        method: GET
         headers:
           Authorization: "Token {{ netbox_api_token }}"
-          Content-Type: "application/json"
         return_content: yes
-        status_code: 200
       register: netbox_rendered_config
+      when: netbox_device_id is defined  # Proceed only if device_id is found
 
     - name: Extract configuration content from NetBox response
       set_fact:
         rendered_config: "{{ netbox_rendered_config.json.content }}"
+      when: netbox_rendered_config is defined
 
     - name: Debug - Display rendered configuration
       debug:
@@ -39,11 +40,12 @@
 
     - name: Push configuration to Cisco switch
       cisco.ios.ios_config:
-        lines: "{{ rendered_config.splitlines() }}"  # Push the config as a list of lines
+        lines: "{{ rendered_config.splitlines() }}"
         save_when: modified  # Save the configuration only if modified
       vars:
+        ansible_host: "{{ ansible_host }}"
         ansible_user: "{{ ansible_user }}"
         ansible_password: "{{ ansible_password }}"
-        ansible_host: "{{ ansible_host }}"
         ansible_become: yes
         ansible_become_password: "{{ ansible_enable_password }}"
+      when: rendered_config is defined  # Proceed only if rendered config is fetched
